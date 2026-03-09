@@ -150,17 +150,22 @@ async function callAI(node, aiConfig, messages) {
 
     node.warn(JSON.stringify(requestPayload, null, 2));
     
+    const isOpenAI = aiConfig.apiType === 'openai';
+    const headers = {
+      'Authorization': `Bearer ${aiConfig.apiKey}`,
+      'Content-Type': 'application/json',
+      ...(!isOpenAI && {
+        'HTTP-Referer': 'https://nodered.org/',
+        'X-Title': 'Node-RED AI Agent'
+      })
+    };
+
     const response = await axios.post(
-      'https://openrouter.ai/api/v1/chat/completions',
+      isOpenAI
+        ? 'https://api.openai.com/v1/chat/completions'
+        : 'https://openrouter.ai/api/v1/chat/completions',
       requestPayload,
-      {
-        headers: {
-          'Authorization': `Bearer ${aiConfig.apiKey}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': 'https://nodered.org/',
-          'X-Title': 'Node-RED AI Agent'
-        }
-      }
+      { headers }
     );
     
     // Check if the response contains tool calls

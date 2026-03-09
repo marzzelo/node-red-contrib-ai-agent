@@ -5,6 +5,7 @@ module.exports = function(RED) {
         // Store configuration
         this.name = config.name;
         this.model = config.model;
+        this.apiType = config.apiType || 'openrouter';
         this.temperature = parseFloat(config.temperature) || 0.7;
         this.maxTokens = parseInt(config.maxTokens) || 1000;
         
@@ -24,7 +25,7 @@ module.exports = function(RED) {
                 
                 if (!this.credentials || !this.credentials.apiKey) {
                     this.status({fill:"red", shape:"ring", text:"Error: No API key"});
-                    this.error("AI Model node error: No API key configured. Please add your OpenRouter API key in the node's configuration.", msg);
+                    this.error("AI Model node error: No API key configured. Please add your API key in the node's configuration.", msg);
                     if (done) done();
                     return;
                 }
@@ -35,6 +36,7 @@ module.exports = function(RED) {
                 // Add AI configuration to the message
                 newMsg.aiagent = {
                     model: this.model,
+                    apiType: this.apiType,
                     apiKey: this.credentials.apiKey,
                     temperature: this.temperature,
                     maxTokens: this.maxTokens
