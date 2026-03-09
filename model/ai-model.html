@@ -11,6 +11,7 @@
         color: '#a6bbcf',
         defaults: {
             name: { value: '' },
+            apiType: { value: 'openrouter' },
             model: {
                 value: '',
                 required: true,
@@ -38,6 +39,7 @@
             // Store the original values to detect changes
             var originalValues = {
                 name: node.name || '',
+                apiType: node.apiType || 'openrouter',
                 model: node.model || '',
                 temperature: node.temperature || 0.7,
                 maxTokens: node.maxTokens || 1000,
@@ -51,10 +53,27 @@
             
             // Set initial values
             $('#node-config-input-name').val(originalValues.name);
+            $('#node-config-input-apiType').val(originalValues.apiType);
             $('#node-config-input-model').val(originalValues.model);
             $('#node-config-input-temperature').val(originalValues.temperature);
             $('#node-config-input-maxTokens').val(originalValues.maxTokens);
             $('#temperature-value').text(originalValues.temperature);
+            
+            // Update API key label based on the selected provider
+            function updateApiKeyLabel(apiType) {
+                if (apiType === 'openai') {
+                    $('#api-key-label').text('OpenAI API Key');
+                    $('#node-config-input-credentials-apiKey').attr('placeholder', 'sk-...');
+                } else {
+                    $('#api-key-label').text('OpenRouter API Key');
+                    $('#node-config-input-credentials-apiKey').attr('placeholder', 'sk-or-...');
+                }
+            }
+            
+            updateApiKeyLabel(originalValues.apiType);
+            $('#node-config-input-apiType').on('change', function() {
+                updateApiKeyLabel($(this).val());
+            });
             
             // Initialize credentials if they don't exist
             this.credentials = this.credentials || {};
@@ -72,6 +91,7 @@
             RED.view.state.RED_view_state_close = function() {
                 var currentValues = {
                     name: $('#node-config-input-name').val(),
+                    apiType: $('#node-config-input-apiType').val(),
                     model: $('#node-config-input-model').val(),
                     temperature: parseFloat($('#node-config-input-temperature').val()),
                     maxTokens: parseInt($('#node-config-input-maxTokens').val()),
@@ -101,7 +121,7 @@
                     return false;
                 }
                 if (!$('#node-config-input-credentials-apiKey').val()) {
-                    RED.notify('Please enter an OpenRouter API key', 'error');
+                    RED.notify('Please enter an API key', 'error');
                     return false;
                 }
                 if (!$('#node-config-input-model').val()) {
@@ -115,6 +135,7 @@
         oneditsave: function() {
             // Save all configuration values
             this.name = $('#node-config-input-name').val();
+            this.apiType = $('#node-config-input-apiType').val();
             this.model = $('#node-config-input-model').val();
             this.temperature = parseFloat($('#node-config-input-temperature').val());
             this.maxTokens = parseInt($('#node-config-input-maxTokens').val());
@@ -144,7 +165,15 @@
     </div>
     
     <div class="form-row">
-        <label for="node-config-input-credentials-apiKey"><i class="fa fa-key"></i> OpenRouter API Key</label>
+        <label for="node-config-input-apiType"><i class="fa fa-plug"></i> API Provider</label>
+        <select id="node-config-input-apiType" style="width: 70%;">
+            <option value="openrouter">OpenRouter</option>
+            <option value="openai">OpenAI</option>
+        </select>
+    </div>
+    
+    <div class="form-row">
+        <label for="node-config-input-credentials-apiKey"><i class="fa fa-key"></i> <span id="api-key-label">OpenRouter API Key</span></label>
         <input type="password" id="node-config-input-credentials-apiKey" placeholder="sk-or-...">
     </div>
     
@@ -438,7 +467,7 @@
     </div>
     
     <div class="form-tips">
-        <p><b>Note:</b> You'll need an OpenRouter API key to use AI models.</p>
+        <p><b>Note:</b> You'll need an API key from either OpenRouter or OpenAI to use AI models.</p>
     </div>
 </script>
 
@@ -449,7 +478,8 @@
     <h4>Configuration</h4>
     <ul>
         <li><b>Name:</b> A name for this configuration</li>
-        <li><b>OpenRouter API Key:</b> Your OpenRouter API key (required)</li>
+        <li><b>API Provider:</b> Select <b>OpenRouter</b> to use the OpenRouter API, or <b>OpenAI</b> to use the OpenAI API directly</li>
+        <li><b>API Key:</b> Your OpenRouter API key (starts with <code>sk-or-</code>) or your OpenAI API key (starts with <code>sk-</code>)</li>
         <li><b>AI Model:</b> The AI model to use for generating responses</li>
         <li><b>Temperature:</b> Controls randomness (0 = deterministic, 2 = very random)</li>
         <li><b>Max Tokens:</b> Maximum number of tokens to generate in the response</li>

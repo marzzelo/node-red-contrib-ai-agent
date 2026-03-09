@@ -44,6 +44,7 @@ describe("AI Model Node", function () {
         type: "ai-model",
         name: "test model",
         model: "openai/gpt-4",
+        apiType: "openrouter",
         temperature: "0.5",
         maxTokens: "2048",
         wires: [["n2"]],
@@ -64,6 +65,7 @@ describe("AI Model Node", function () {
 
           // 2. Check the properties of aiagent
           expect(aiagent).to.have.property("model", "openai/gpt-4");
+          expect(aiagent).to.have.property("apiType", "openrouter");
           expect(aiagent).to.have.property("apiKey", "test-api-key");
           expect(aiagent).to.have.property("temperature", 0.5);
           expect(aiagent).to.have.property("maxTokens", 2048);
@@ -141,7 +143,7 @@ describe("AI Model Node", function () {
       
       n1.on("call:error", (call) => {
         try {
-          expect(call.args[0]).to.equal("AI Model node error: No API key configured. Please add your OpenRouter API key in the node's configuration.");
+          expect(call.args[0]).to.equal("AI Model node error: No API key configured. Please add your API key in the node's configuration.");
           expect(n1.status).to.have.been.calledWith({fill:"red", shape:"ring", text:"Error: No API key"});
           done();
         } catch(err) {
@@ -176,6 +178,43 @@ describe("AI Model Node", function () {
           expect(msg).to.have.property("aiagent");
           expect(msg.aiagent).to.have.property("temperature", 0.7);
           expect(msg.aiagent).to.have.property("maxTokens", 1000);
+          expect(msg.aiagent).to.have.property("apiType", "openrouter");
+          done();
+        } catch (err) {
+          done(err);
+        }
+      });
+
+      n1.receive({ payload: "test payload" });
+    });
+  });
+
+  it("should include apiType 'openai' in aiagent config when configured", function (done) {
+    const flow = [
+      {
+        id: "n1",
+        type: "ai-model",
+        name: "openai test",
+        model: "gpt-4o",
+        apiType: "openai",
+        temperature: "0.8",
+        maxTokens: "512",
+        wires: [["n2"]],
+      },
+      { id: "n2", type: "helper" },
+    ];
+    const credentials = { n1: { apiKey: "sk-test-openai-key" } };
+
+    helper.load(aiModelNode, flow, credentials, function () {
+      const n1 = helper.getNode("n1");
+      const n2 = helper.getNode("n2");
+
+      n2.on("input", function (msg) {
+        try {
+          expect(msg).to.have.property("aiagent");
+          expect(msg.aiagent).to.have.property("apiType", "openai");
+          expect(msg.aiagent).to.have.property("apiKey", "sk-test-openai-key");
+          expect(msg.aiagent).to.have.property("model", "gpt-4o");
           done();
         } catch (err) {
           done(err);
